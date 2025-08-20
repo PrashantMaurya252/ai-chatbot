@@ -1,12 +1,154 @@
+// import Groq from "groq-sdk";
+// import dotenv from "dotenv";
+// import { tavily } from "@tavily/core";
+// import readline from "node:readline/promises";
+// dotenv.config();
+
+// console.log(process.env.GROQ_API_KEY);
+// const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+// const tvly = tavily({ apiKey: process.env.TAVILY_API_KEY });
+
+
+// export async function generate(userMessage) {
+
+//   // const rl = readline.createInterface({input:process.stdin,output:process.stdout})
+
+//     // const question = await rl.question('You:')
+//     // bye
+//     // if(question === 'bye'){
+//     //   break
+//     // }
+//     let messages = []
+//     messages.push({
+//       role:'user',
+//       content:userMessage
+//     })
+//     while (true) {
+//       const completions = await groq.chat.completions.create({
+//         model: "llama-3.1-8b-instant",
+//         temperature: 0,
+//         messages: messages,
+//         tools: [
+//           {
+//             type: "function",
+//             function: {
+//               name: "webSearch",
+//               description:
+//                 "Search the latest information and realtime data on internet",
+//               parameters: {
+//                 type: "object",
+//                 properties: {
+//                   query: {
+//                     type: "string",
+//                     description: "The search query to perform the search on.",
+//                   },
+//                 },
+//                 required: ["query"],
+//               },
+//             },
+//           },
+//         ],
+//         tool_choice: "auto",
+//       });
+
+//       messages.push(completions?.choices[0].message);
+//       const toolCalls = completions.choices[0].message.tool_calls;
+//       console.log(completions.choices[0].message);
+
+//       if (!toolCalls) {
+//         // console.log(`Assistant: ${completions.choices[0].message.content}`)
+//         return completions.choices[0].message.content
+        
+//       }
+
+//       for (const tool of toolCalls) {
+//         // console.log("tool",tool)
+//         const functionName = tool.function.name;
+//         const functionParams = JSON.parse(tool.function.arguments);
+//         // console.log("Function name",tool.function.name)
+//         // console.log("Arguments",tool.function.arguments)
+
+//         if (functionName === "webSearch") {
+//           const toolResult = await searchWeb(functionParams);
+//           // console.log("Tool result: ",toolResult)
+//           messages.push({
+//             tool_call_id: tool.id,
+//             role: "tool",
+//             name: functionName,
+//             content: toolResult,
+//           });
+//           messages.push({
+//             role: "system",
+//             content:
+//               "Now answer the user's question using the tool result above.",
+//           });
+//         }
+//       }
+
+//       const completions2 = await groq.chat.completions.create({
+//         model: "llama-3.1-8b-instant",
+//         temperature: 0,
+//         messages: messages,
+//       });
+
+//       if (!completions2.choices[0].message.tool_calls) {
+//     console.log(`Assistant: ${completions2.choices[0].message.content}`);
+//     break;   // ✅ stop after final answer
+//   }
+//     }
+  
+//   // rl.close()
+// }
+
+import Groq from "groq-sdk";
+import dotenv from "dotenv";
+import { tavily } from "@tavily/core";
+import readline from "node:readline/promises";
+dotenv.config();
+
+console.log(process.env.GROQ_API_KEY);
+const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+const tvly = tavily({ apiKey: process.env.TAVILY_API_KEY });
+
+
+async function searchWeb({ query }) {
+  console.log("Calling web search....")
+  // const response = await tvly.search(query,{maxResults:1});
+  const response = await tvly.search(query);
+  // console.log("Response:",response)
+
+  const finalResult = response.results
+    ?.map((result) => result.content)
+    .join("\n\n");
+  // console.log("Final Result",finalResult)
+  return finalResult;
+}
+
+const messages = [
+  {
+    role: "system",
+    content: `You are smart personal assistant who answers the asked questions
+        You have access to following tools:
+        1. webSearch({query}:{query:string})  // Search the latest information and realtime data on internet
+        `,
+  },
+  // {
+  //   role: "user",
+  //   // content:"when was iphone 16 launched ?"
+  //   content: "what is current weather in mumbai ?",
+  // },
+];
+
 export async function generate(userMessage) {
 
-  const rl = readline.createInterface({input:process.stdin,output:process.stdout})
+  // const rl = readline.createInterface({input:process.stdin,output:process.stdout})
 
-    const question = await rl.question('You:')
+    // const question = await rl.question('You:')
     // bye
     // if(question === 'bye'){
     //   break
     // }
+    let messages = []
     messages.push({
       role:'user',
       content:userMessage
@@ -80,10 +222,10 @@ export async function generate(userMessage) {
       });
 
       if (!completions2.choices[0].message.tool_calls) {
-    console.log(`Assistant: ${completions2.choices[0].message.content}`);
-    break;   // ✅ stop after final answer
+    // console.log(`Assistant: ${completions2.choices[0].message.content}`);
+    return completions2.choices[0].message.content
   }
     }
   
-  rl.close()
+  // rl.close()
 }
